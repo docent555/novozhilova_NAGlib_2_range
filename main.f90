@@ -15,8 +15,8 @@ program sys15f
 
    start_time = dclock()
    do i = 1, ndtr
-      dtr(1) = dtr0 + (i - 1)*dtrh
-      dtr(2) = dtr0 + (i - 1)*dtrh
+      dtr(1) = dtr0 + (i - 1)*dtrh_w
+      dtr(2) = dtr0 + (i - 1)*dtrh_w
 
       print *, 'DTR = ', dtr(1)
 
@@ -44,10 +44,10 @@ program sys15f
          p10 = mod(f(2, nt), 2*pi)
          p20 = mod(f(4, nt), 2*pi)
          p30 = mod(f(6, nt), 2*pi)
-      end if      
+      end if
 
       call write_results()
-      
+
       f(1, 1) = f10
       f(2, 1) = p10
       f(3, 1) = f20

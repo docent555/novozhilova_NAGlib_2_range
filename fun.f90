@@ -7,7 +7,7 @@ module fun
    real(c_double) zex_w, zex, dz, tend, dtr(2), q(3), icu(2), th(2), a(2), dcir(2), r(2), &
       f0(3), dt, pitch, f10, f20, f30, p10, p20, p30, ftol, ptol, hstart, zstart, xout, nharm, &
       gamma, ukv, betta, betta2, betta_z, betta_z2, betta_perp, betta_perp2, gmp, w_op_w, w_op, c, e, m, b(2), w_n(2), ia(2), norm, nfac, &
-      dtrb(2), dtrh, dtr0
+      dtrb(2), dtrh_w, dtr0
    complex(c_double_complex) fp(2)
    logical(c_bool) errass, wc, fok, lensm, btod, iatoi, inher
 
@@ -19,7 +19,7 @@ module fun
 
    integer(c_int), allocatable, target :: idxre(:, :), idxim(:, :), iwork(:), idxp(:, :)
    complex(c_double_complex), allocatable, target :: u(:), mean(:)
-   real(c_double), allocatable, target :: tax(:), zax(:), eta(:, :), etag(:, :), w(:, :), f(:, :), p(:, :), &
+   real(c_double), allocatable, target :: tax(:), zax(:), eta(:, :), etag(:, :), w(:, :), w_monitr(:, :), f(:, :), p(:, :), &
                                           phi(:, :), phios(:, :), wos(:, :), &
                                           pgot(:), ppgot(:), pmax(:), thres(:), workp(:), work(:), dp2dz(:, :), mean2(:, :), &
                                           cl1(:), lhs1(:), rhs1(:), cl2(:), lhs2(:), rhs2(:)
@@ -75,7 +75,7 @@ contains
                   *(Q(2)*gmp*betta**(2*inharm - 4)/gamma/betta_z)/norm
       end if
 
-      print *, 'dtr1 = ', dtr(1), 'dtr2 = ', dtr(2)
+      !print *, 'dtr1 = ', dtr(1), 'dtr2 = ', dtr(2)
       print *, 'icu1 = ', icu(1), 'icu2 = ', icu(2)
 
       nt = tend/dt + 1
@@ -132,12 +132,12 @@ contains
          p(3*ne + i, 1) = dimag(cdexp(ic*(i - 1)/dble(ne)*2*pi))
       end do
 
-      if (dtrh > 0) then
-         ndtr = (dtrb(2) - dtrb(1))/dtrh
+      if (dtrh_w > 0) then
+         ndtr = (dtrb(2) - dtrb(1))/dtrh_w
       else
          ndtr = 1
       end if
-      
+
       dtr0 = dtrb(1)
 
    end subroutine init
@@ -254,7 +254,7 @@ contains
       allocate (f(6, nt), p(neqp, nz), u(nz), tax(nt), zax(nz), mean(nz), eta(2, nt), etag(2, nt), w(3, nt), &
                 idxre(2, ne), idxim(2, ne), pgot(neqp), ppgot(neqp), pmax(neqp), thres(neqp), workp(lenwrk), work(lwork), &
                 iwork(liwork), wos(3, nt), phi(3, nt), phios(3, nt), dp2dz(2*ne, nz), idxp(2, ne), mean2(2, nz - 1), &
-                cl1(nt), lhs1(nt), rhs1(nt), cl2(nt), lhs2(nt), rhs2(nt), stat=err_alloc)
+                cl1(nt), lhs1(nt), rhs1(nt), cl2(nt), lhs2(nt), rhs2(nt), w_monitr(3, nt), stat=err_alloc)
 
       if (err_alloc /= 0) then
          print *, "allocation error"
@@ -269,7 +269,7 @@ contains
 
       integer(c_int) err_dealloc
 
-      deallocate (f, p, u, tax, zax, mean, eta, etag, w, stat=err_dealloc)
+      deallocate (f, p, u, tax, zax, mean, eta, etag, w, w_monitr, stat=err_dealloc)
 
       if (err_dealloc /= 0) then
          print *, "deallocation error"
@@ -288,7 +288,7 @@ contains
          w_op, lensm, btod, b1, b2, iatoi, ia1, ia2, &
          dtrb, dtrh, inher
 
-      real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dcir1, dcir2, r1, r2, b1, b2, ia1, ia2
+      real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dcir1, dcir2, r1, r2, b1, b2, ia1, ia2, dtrh
 
       open (unit=1, file='input_fortran.in', status='old', err=101)
       read (unit=1, nml=param, err=102)
@@ -313,6 +313,7 @@ contains
       b(2) = b2
       ia(1) = ia1
       ia(2) = ia2
+      dtrh_w = dtrh
 
       write (*, nml=param)
 
@@ -332,8 +333,8 @@ contains
          dtrb, dtrh, inher
 
       character(*) path
-      real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dcir1, dcir2, r1, r2, b1, b2, ia1, ia2
-      logical wc
+      real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dcir1, dcir2, r1, r2, b1, b2, ia1, ia2, dtrh
+      !logical wc
 
       !open (unit=1, file='input_fortran.in', status='old', err=101)
       !!print *, 'OK1'
@@ -375,12 +376,13 @@ contains
       b2 = b(2)
       ia1 = ia(1)
       ia2 = ia(2)
+      dtrh = 0
 
       open (unit=1, file=path//'input_fortran.in', err=101)
       !print *, 'OK2'
       write (1, nml=param)
       close (unit=1)
-      
+
       write (*, nml=param)
 
       return
@@ -451,7 +453,7 @@ contains
 
       open (3, file=path//'cl1.dat')
       do i = 1, nt
-         write (3, '(5f12.6,a)') tax(i), cl1(i), lhs1(i), rhs1(i), abs(cl1(i)/lhs1(i))*100,' %'
+         write (3, '(5f12.6,a)') tax(i), cl1(i), lhs1(i), rhs1(i), abs(cl1(i)/lhs1(i))*100, ' %'
       end do
       close (3)
 
@@ -484,9 +486,15 @@ contains
       end do
       close (2)
 
+      !open (3, file=path//'W.dat')
+      !do i = 1, nt
+      !   write (3, '(4e17.8)') tax(i), w(1, i), w(2, i), w(3, i)
+      !end do
+      !close (3)
+
       open (3, file=path//'W.dat')
       do i = 1, nt
-         write (3, '(4e17.8)') tax(i), w(1, i), w(2, i), w(3, i)
+         write (3, '(4e17.8)') tax(i), w_monitr(1, i), w_monitr(2, i), w_monitr(3, i)
       end do
       close (3)
 
@@ -1003,6 +1011,9 @@ contains
             '  w1 = ', ydot(2), '  w2 = ', ydot(4), '  w3 = ', ydot(6), '  c1 = ', dabs(cl1(it)/rhs1(it))*100, '%  c2 = ', dabs(cl2(it)/rhs2(it)*100), '%', char(13)
          do j = 1, n
             f(j, it) = r(j)
+         end do
+         do j = 1, 3
+            w_monitr(j, it) = ydot(2*j)
          end do
          xout = xout + dt
          nt = it
