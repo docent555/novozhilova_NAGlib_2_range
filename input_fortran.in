@@ -35,7 +35,7 @@
  btod = t
  b1 = 0.514
  b2 = 0.514
- dtrb = 0.55, 0.6
- dtrh = 0
- inher = f
+ dtrb = 0.5, 0.6
+ dtrh = -0.001
+ inher = t
  /

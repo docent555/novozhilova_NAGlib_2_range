@@ -132,11 +132,11 @@ contains
          p(3*ne + i, 1) = dimag(cdexp(ic*(i - 1)/dble(ne)*2*pi))
       end do
 
-      if (dtrh_w > 0) then
+      if (dtrh_w .ne. 0) then
          ndtr = (dtrb(2) - dtrb(1))/dtrh_w + 1
       else
          ndtr = 1
-      end if
+      end if      
 
       dtr0 = dtrb(1)
 
@@ -160,6 +160,8 @@ contains
    end subroutine norma
 
    recursive function factorial(p) result(l)
+      import, none
+      implicit none
       integer, intent(in) :: p
       integer l
       if (p == 1) then
@@ -170,7 +172,8 @@ contains
    end function
 
    function squval(zz)
-
+      use, intrinsic :: iso_c_binding, only: c_double, c_double_complex, c_int
+      import, only: zex_w, za, rea, ima
       implicit none
 
       real(c_double), intent(in) :: zz
@@ -210,43 +213,43 @@ contains
 
    end function squval
 
-   function uval(zz)
-
-      implicit none
-
-      real(c_double), intent(in) :: zz
-
-      complex(c_double_complex) uval
-      real(c_double) z, re, im, d
-      integer(c_int) l
-
-      z = zz/zex_w*185.5 - 8.5
-      l = (z + 8.5)/0.28021 + 1
-      d = z - za(l)
-
-      !print *, z, l, d
-
-      if (d .gt. 0.0 .and. l /= 663) then
-         re = (rea(l)*za(l + 1) - rea(l + 1)*za(l))/(za(l + 1) - za(l)) + &
-              (rea(l + 1) - rea(l))/(za(l + 1) - za(l))*z
-         im = (ima(l)*za(l + 1) - ima(l + 1)*za(l))/(za(l + 1) - za(l)) + &
-              (ima(l + 1) - ima(l))/(za(l + 1) - za(l))*z
-      else if (d .lt. 0.0 .and. l /= 1) then
-         re = (rea(l - 1)*za(l) - rea(l)*za(l - 1))/(za(l) - za(l - 1)) + &
-              (rea(l) - rea(l - 1))/(za(l) - za(l - 1))*z
-         im = (ima(l - 1)*za(l) - ima(l)*za(l - 1))/(za(l) - za(l - 1)) + &
-              (ima(l) - ima(l - 1))/(za(l) - za(l - 1))*z
-      else
-         re = rea(l)
-         im = ima(l)
-      end if
-
-      uval = dcmplx(re, im)
-
-   end function uval
+   !function uval(zz)
+   !
+   !   implicit none
+   !
+   !   real(c_double), intent(in) :: zz
+   !
+   !   complex(c_double_complex) uval
+   !   real(c_double) z, re, im, d
+   !   integer(c_int) l
+   !
+   !   z = zz/zex_w*185.5 - 8.5
+   !   l = (z + 8.5)/0.28021 + 1
+   !   d = z - za(l)
+   !
+   !   !print *, z, l, d
+   !
+   !   if (d .gt. 0.0 .and. l /= 663) then
+   !      re = (rea(l)*za(l + 1) - rea(l + 1)*za(l))/(za(l + 1) - za(l)) + &
+   !           (rea(l + 1) - rea(l))/(za(l + 1) - za(l))*z
+   !      im = (ima(l)*za(l + 1) - ima(l + 1)*za(l))/(za(l + 1) - za(l)) + &
+   !           (ima(l + 1) - ima(l))/(za(l + 1) - za(l))*z
+   !   else if (d .lt. 0.0 .and. l /= 1) then
+   !      re = (rea(l - 1)*za(l) - rea(l)*za(l - 1))/(za(l) - za(l - 1)) + &
+   !           (rea(l) - rea(l - 1))/(za(l) - za(l - 1))*z
+   !      im = (ima(l - 1)*za(l) - ima(l)*za(l - 1))/(za(l) - za(l - 1)) + &
+   !           (ima(l) - ima(l - 1))/(za(l) - za(l - 1))*z
+   !   else
+   !      re = rea(l)
+   !      im = ima(l)
+   !   end if
+   !
+   !   uval = dcmplx(re, im)
+   !
+   !end function uval
 
    subroutine allocate_arrays()
-      use, intrinsic :: iso_c_binding
+      !use, intrinsic :: iso_c_binding
       implicit none
 
       integer(c_int) err_alloc
@@ -264,7 +267,7 @@ contains
    end subroutine allocate_arrays
 
    subroutine deallocate_arrays()
-      use, intrinsic :: iso_c_binding
+      !use, intrinsic :: iso_c_binding
       implicit none
 
       integer(c_int) err_dealloc
@@ -333,29 +336,7 @@ contains
          dtrb, dtrh, inher
 
       character(*) path
-      real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dcir1, dcir2, r1, r2, b1, b2, ia1, ia2, dtrh
-      !logical wc
-
-      !open (unit=1, file='input_fortran.in', status='old', err=101)
-      !!print *, 'OK1'
-      !read (unit=1, nml=param, err=102)
-      !close (unit=1)
-
-      !f(1, 1) = f10
-      !f(2, 1) = p10
-      !f(3, 1) = f20
-      !f(4, 1) = p20
-      !f(5, 1) = f30
-      !f(6, 1) = p30
-      !
-      !if (inher .eq. .true.) then
-      !   f10 = f(1, nt)
-      !   f20 = f(3, nt)
-      !   f30 = f(5, nt)
-      !   p10 = mod(f(2, nt), 2*pi)
-      !   p20 = mod(f(4, nt), 2*pi)
-      !   p30 = mod(f(6, nt), 2*pi)
-      !end if
+      real(c_double) q1, q2, q3, i1, i2, th1, th2, a1, a2, dcir1, dcir2, r1, r2, b1, b2, ia1, ia2, dtrh      
 
       dtrb(1) = dtr(1)
       dtrb(2) = 0
@@ -378,8 +359,7 @@ contains
       ia2 = ia(2)
       dtrh = 0
 
-      open (unit=1, file=path//'input_fortran.in', err=101)
-      !print *, 'OK2'
+      open (unit=1, file=path//'input_fortran.in', err=101)     
       write (1, nml=param)
       close (unit=1)
 

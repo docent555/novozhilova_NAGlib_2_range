@@ -20,22 +20,9 @@ program sys15f
 
       print *, 'DTR = ', dtr(1)
 
-      call ode4f()
-      !stop_time = dclock()
-
-      !calc_time = stop_time - start_time
-      !
-      !hours = calc_time/3600
-      !minutes = (calc_time - hours*3600)/60
-      !seconds = calc_time - hours*3600 - minutes*60
-
-      !write (*, '(/)')
-      !print *, 'Calcualting took:', hours, 'h :', minutes, 'm :', seconds, 's'
-
-      !start_time = dclock()
+      call ode4f()      
       write (*, '(/)')
-      print *, 'Writing...'
-      !write (*, '(/)')
+      print *, 'Writing...'      
 
       if (inher .eq. .true.) then
          f10 = f(1, nt)
